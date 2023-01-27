@@ -6,5 +6,5 @@ resources:
   - serviceaccount.yaml
 images:
   - name: docker.io/raakatz/flask-vault
-    newTag: "0.0.2"
+    newTag: "0.0.1"
 namespace: prod
