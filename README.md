@@ -28,7 +28,7 @@ Flagger watches a Deployment/StatefulSet. It immediatly scales down the original
 
 When a new Deployment is applied, Flagger automatically adjusts the relevant resources to balance traffic to the canary, and continuously analyses it to increate the percents for positive metrics, or rollback for negative metrics. These can be custom application metrics, latency respones, REST responses, etc.
 
-[Flagger Overview](/docs/images/flagger-overview.png)
+![Flagger Overview](/docs/images/flagger-overview.png)
 
 ## Prerequisites
 
