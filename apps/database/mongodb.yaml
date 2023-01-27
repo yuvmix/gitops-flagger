@@ -1,0 +1,37 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: bitnami
+  namespace: prod
+spec:
+  interval: 1h0m0s
+  url: "https://charts.bitnami.com/bitnami"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: database
+  namespace: prod
+spec:
+  releaseName: database
+  chart:
+    spec:
+      version: "13.5.0"
+      chart: mongodb
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+  interval: 1h0m0s
+  values:
+    auth:
+      rootPassword: "willBeChangedByVault"
+    persistence:
+      enabled: false
+    arbiter:
+      enabled: false
+    livenessProbe:
+      enabled: false
+    readinessProbe:
+      enabled: false
+    startupProbe:
+      enabled: false

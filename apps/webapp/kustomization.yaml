@@ -1,0 +1,10 @@
+resources:
+  - canary.yaml
+  - cm.yaml
+  - deploy.yaml
+  - service.yaml
+  - serviceaccount.yaml
+images:
+  - name: docker.io/raakatz/flask-vault
+    newTag: "0.0.11"
+namespace: prod

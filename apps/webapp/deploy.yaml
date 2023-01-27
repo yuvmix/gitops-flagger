@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: webapp
+  name: webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      serviceAccount: webapp
+      serviceAccountName: webapp
+      volumes:
+      - configMap:
+          items:
+          - key: vault-agent-config.hcl
+            path: vault-agent-config.hcl
+          - key: db-env.tmpl
+            path: db-env.tmpl
+          name: vault-agent-config
+        name: config
+      - emptyDir: {}
+        name: shared-data
+      containers:
+      - image: "docker.io/raakatz/flask-vault"
+        name: webapp
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: flask
+        readinessProbe:
+          httpGet:
+            path: /register
+            port: flask
+          periodSeconds: 5
+        volumeMounts:
+        - mountPath: /app/secrets
+          name: shared-data
+      - args:
+        - agent
+        - -config=/etc/vault/vault-agent-config.hcl
+        - -log-level=debug
+        env:
+        - name: VAULT_ADDR
+          value: http://vault.vault.svc:8200
+        - name: SKIP_CHOWN
+          value: "true"
+        - name: SKIP_SETCAP
+          value: "true"
+        - name: HOME
+          value: "/home/vault"
+        image: "docker.io/hashicorp/vault:1.12.2"
+        name: vault-agent
+        volumeMounts:
+        - mountPath: /etc/vault
+          name: config
+        - mountPath: /app/secrets
+          name: shared-data
+        ports:
+        - containerPort: 8200
+          name: vault

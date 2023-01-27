@@ -1,0 +1,36 @@
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: webapp
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: webapp
+  service:
+    name: webapp
+    port: 80
+    gateways:
+      - istio-system/public-gateway
+    hosts:
+      - "*"
+  analysis:
+    interval: 15s
+    threshold: 10
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+      - name: request-success-rate
+        thresholdRange:
+          min: 99
+        interval: 1m
+      - name: request-duration
+        thresholdRange:
+          max: 500
+        interval: 1m
+    webhooks:
+      - name: load-test
+        type: rollout
+        url: http://flagger-loadtester.prod/
+        metadata:
+          cmd: "hey -z 10s -q 10 -c 2 http://webapp-canary.prod:80/register"

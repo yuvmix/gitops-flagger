@@ -1,0 +1,4 @@
+namespace: prod
+resources:
+  - service.yaml
+  - deployment.yaml

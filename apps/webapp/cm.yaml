@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-agent-config
+data:
+  db-env.tmpl: |-
+    {{ with secret "database/creds/webapp" }}
+    DB_USERNAME={{ .Data.username }}
+    DB_PASSWORD={{ .Data.password }}
+    {{ end }}
+  vault-agent-config.hcl: |-
+    pid_file = "/home/vault/pidfile"
+
+    vault {
+      address = "http://vault.vault.svc:8200"
+    }
+
+    auto_auth {
+      method "kubernetes" {
+        config = {
+          role = "webapp"
+        }
+      }
+
+      sink "file" {
+        config = {
+          path = "/home/vault/.vault-token"
+        }
+      }
+    }
+
+    cache {
+      use_auto_auth_token = true
+    }
+
+    listener "tcp" {
+      address = "127.0.0.1:8200"
+      tls_disable = true
+    }
+
+    template {
+      source = "/etc/vault/db-env.tmpl"
+      destination = "/app/secrets/.env"
+      error_on_missing_key = true
+    }
+    
+    template_config {
+      exit_on_retry_failure = true
+    }
