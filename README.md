@@ -89,7 +89,7 @@ webapp     Initialized   0
 Find the Istio ingress gateway address with:
 
 ```bash
-kubectl -n istio-system get svc istio-ingress -o json | jq .status.loadBalancer.ingress
+kubectl -n istio-system get svc istio-ingress -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
 Open a browser and navigate to the ingress address, you'll see the frontend UI.
@@ -121,20 +121,15 @@ flux reconcile source git flux-system
 
 Watch the live traffic balancing to your application by running:
 ```bash
-while true; do curl -s http://<ISTIO_INGRESS_LOADBALANCER_IP> | grep button-color; sleep 1; done
-```
-
-Watch Flux reconciling your cluster to the latest commit:
-
-```bash
-watch flux get kustomizations
+export ISTIO_INGRESS_IP=$(kubectl -n istio-system get svc istio-ingress -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+while true; do curl -s http://${ISTIO_INGRESS_IP} | grep button-color; sleep 1; done
 ```
 
 After a couple of seconds, Flagger detects that the deployment revision changed and starts a new rollout:
 
 ```bash
-$ kubectl -n prod describe canary webapp
-Events:
+kubectl -n flagger-system logs -f $(kubectl -n flagger-system get pods -l app.kubernetes.io/name=flagger -o name)
+
 New revision detected! Scaling up webapp.prod
 Starting canary analysis for webapp.prod
 Pre-rollout check conformance-test passed
@@ -148,8 +143,9 @@ Promotion completed! Scaling down webapp.prod
 During the analysis the canary’s progress can be monitored with Grafana. You can access the dashboard using Grafana's LoadBalancer IP:
 
 ```bash
-kubectl -n istio-system get svc
+kubectl -n flagger-system get svc flagger-grafana -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
+The Istio dashboard URL is http://<GRAFANA_IP>/d/flagger-istio/istio-canary?refresh=10s&orgId=1&var-namespace=prod&var-primary=backend-primary&var-canary=backend
 
 ## Application usage
 
@@ -158,7 +154,7 @@ To see the application in action, use it's UI to "register" and send some data t
 You can see the dynamic credentials that the application obtained from Vault by running:
 
 ```bash
-kubectl -n prod logs $(kubectl -n prod get pods -l app=webapp -o jsonpath="{.items[0].metadata.name}")
+kubectl -n prod logs $(kubectl -n prod get pods -l app=webapp-primary -o jsonpath="{.items[0].metadata.name}")
 ```
 
 We'll log in to our database and see the data we entered, with the credit card encrypted
@@ -176,5 +172,5 @@ export ENCRYPTED=<ENCRYPTED DATA>
 
 To see our decrypted data, we'll do so from vault
 ```bash
-kubectl -n vault exec vault-0 -- VAULT_TOKEN=root VAULT_ADDR=http://localhost:8200 vault write -field=plaintext transit/decrypt/my-key ciphertext=${ENCRYPTED} | base64 -d
+kubectl -n vault exec vault-0 -- env VAULT_TOKEN=root VAULT_ADDR=http://localhost:8200 vault write -field=plaintext transit/decrypt/my-key ciphertext=${ENCRYPTED} | base64 -d
 ```
