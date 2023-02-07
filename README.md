@@ -140,13 +140,6 @@ Copying webapp.prod template spec to webapp-primary.prod
 Promotion completed! Scaling down webapp.prod
 ```
 
-During the analysis the canary’s progress can be monitored with Grafana. You can access the dashboard using Grafana's LoadBalancer IP:
-
-```bash
-kubectl -n flagger-system get svc flagger-grafana -o=jsonpath='{.status.loadBalancer.ingress[0].ip}'
-```
-The Istio dashboard URL is http://<GRAFANA_IP>/d/flagger-istio/istio-canary?refresh=10s&orgId=1&var-namespace=prod&var-primary=backend-primary&var-canary=backend
-
 ## Application usage
 
 To see the application in action, use it's UI to "register" and send some data to the database.
