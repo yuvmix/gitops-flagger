@@ -11,4 +11,4 @@ spec:
   path: ./flagger
   prune: true
   wait: true
-  timeout: 2m0s
+  
